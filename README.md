@@ -1,4 +1,7 @@
 # Rentsplit
+A tool to split the rent with your mates!
+
+
 ## Installation
 ```
 # Installation
