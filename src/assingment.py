@@ -1,7 +1,7 @@
 from itertools import permutations
 
 import numpy as np
-from allocation import is_efficient
+from properties import is_efficient
 
 
 def compute_efficient_assingments(V: np.ndarray):
