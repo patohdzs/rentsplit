@@ -8,17 +8,21 @@ def compute_auction_prices(V: np.ndarray, R: int, tol=1e5):
     p = (R / n) * np.ones(n)
     t = 0
     while t < tol:
+        # Find over-demanded rooms
         od = _find_overdemanded(V, p)
         if not od:
             # Re-normalize
             p = p + (R - p.sum()) / n
             return p
+
         # Increase prices of over demanded
         p[od] += delta
 
         # Decrease prices of not-over-demanded
         not_od = np.setdiff1d(range(n), od)
         p[not_od] -= (n - len(od)) / len(od) * delta
+
+        # Increase counter
         t += 1
     raise Exception(f"TIMEOUT after {tol} iterations.")
 
