@@ -1,7 +1,22 @@
 import numpy as np
 
 
-def compute_auction_prices(V: np.ndarray, R: int, tol=1e5):
+def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarray:
+    """Computes envy-free prices using a simultanous
+    ascending-descending auctions mechanism,
+    following  Abdulkadiroğlu et al. (2004).
+
+    Args:
+        V (np.ndarray): Matrix of room valuations.
+        R (int): Total rent.
+        tol (int, optional): Maximum number of iterations. Defaults to 10**5.
+
+    Raises:
+        Exception: _description_
+
+    Returns:
+        np.ndarray: Vector of envy-free room prices.
+    """
     # Initialize variables
     n = V.shape[0]
     delta = 1 / (8 * n)
@@ -27,7 +42,7 @@ def compute_auction_prices(V: np.ndarray, R: int, tol=1e5):
     raise Exception(f"TIMEOUT after {tol} iterations.")
 
 
-def _find_overdemanded(V, p):
+def _find_overdemanded(V: np.ndarray, p: np.ndarray) -> list[int]:
     # Find demands
     utilities = V - p
     max_utility = np.max(utilities, axis=1)
