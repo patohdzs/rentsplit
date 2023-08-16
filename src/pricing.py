@@ -25,7 +25,7 @@ def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarra
     while t < tol:
         # Find over-demanded rooms
         od = _find_overdemanded(V, p)
-        if not od:
+        if (od.size == 0) or (od.size == n):
             # Re-normalize
             p = p + (R - p.sum()) / n
             return p
@@ -35,22 +35,51 @@ def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarra
 
         # Decrease prices of not-over-demanded
         not_od = np.setdiff1d(range(n), od)
-        p[not_od] -= (n - len(od)) / len(od) * delta
+        p[not_od] -= (len(od) / (n - len(od))) * delta
 
         # Increase counter
         t += 1
     raise Exception(f"TIMEOUT after {tol} iterations.")
 
 
-def _find_overdemanded(V: np.ndarray, p: np.ndarray) -> list[int]:
-    # Find demands
-    utilities = V - p
-    max_utility = np.max(utilities, axis=1)
-    demands = [
-        room
-        for i, row in enumerate(utilities)
-        for room, u in enumerate(row)
-        if u == max_utility[i] and u >= 0
-    ]
-    # Return over-demanded rooms
-    return [x for x in set(demands) if demands.count(x) > 1]
+def _find_overdemanded(V: np.ndarray, p: np.ndarray):
+    # Get demands as numpy array
+    D = _demands(V, p)
+    carryon = True
+
+    while carryon:
+        mask = _iteration(D)
+        if mask is not None:
+            D = D[~mask, :]
+        else:
+            carryon = False
+
+    return np.unique(D[:, 1])
+
+
+def _iteration(D: np.ndarray) -> np.ndarray | None:
+    # Get unique and counts
+    unique, counts = np.unique(D[:, 1], return_counts=True)
+
+    # Get rooms with count == 1
+    underdemanded = unique[counts == 1]
+
+    # If no rooms are underdemanded, you're done
+    if underdemanded.size == 0:
+        return None
+
+    # Remove agents that demand underdemanded rooms
+    agents_with_underdemanded = D[np.isin(D[:, 1], underdemanded), 0]
+    return np.isin(D[:, 0], agents_with_underdemanded)
+
+
+def _demands(V: np.ndarray, p: np.ndarray) -> np.ndarray:
+    # Find utilities
+    U = V - p
+    max_u = np.max(U, axis=1)
+
+    # Find demanded
+    demanded = (U.T == max_u).T & (U >= 0)
+
+    # Get demands as numpy array
+    return np.transpose((demanded).nonzero())
