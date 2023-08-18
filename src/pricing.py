@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarray:
+def compute_auction_prices(V: np.ndarray, R: float, tol: int = 10**5) -> np.ndarray:
     """Computes envy-free prices using a simultanous
     ascending-descending auctions mechanism,
     following  Abdulkadiroğlu et al. (2004).
@@ -12,25 +12,35 @@ def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarra
         tol (int, optional): Maximum number of iterations. Defaults to 10**5.
 
     Raises:
-        Exception: _description_
+        Exception: Timeout exception after tol iterations.
 
     Returns:
         np.ndarray: Vector of envy-free room prices.
     """
+    # Input validation
+    if R <= 0:
+        raise ValueError("R should be a positive number.")
+
+    if not (V.sum(axis=1) >= R).all():
+        raise ValueError("Rows in V should sum to >= R.")
+
+    if not V.shape[0] == V.shape[1]:
+        raise ValueError("V should be a square matrix.")
+
     # Initialize variables
     n = V.shape[0]
     p = (R / n) * np.ones(n)
     t = 0
     while t < tol:
         # Find over-demanded rooms
-        od = _find_overdemanded(V, p)
+        od = _get_overdemanded(V, p)
         if (od.size == 0) or (od.size == n):
             # Re-normalize
             p = p + (R - p.sum()) / n
             return p
 
         # Find increment
-        x = _find_increment(V, p)
+        x = _get_increment(V, p)
 
         # Increase prices of over demanded
         p[od] += ((n - len(od)) / n) * x
@@ -44,7 +54,7 @@ def compute_auction_prices(V: np.ndarray, R: int, tol: int = 10**5) -> np.ndarra
     raise Exception(f"TIMEOUT after {tol} iterations.")
 
 
-def _find_increment(V, p):
+def _get_increment(V, p):
     # Utility
     U = V - p
 
@@ -52,11 +62,11 @@ def _find_increment(V, p):
     max_u = np.max(U, axis=1)
 
     # Overdemanded and not overdemanded rooms
-    od = _find_overdemanded(V, p)
+    od = _get_overdemanded(V, p)
     not_od = np.setdiff1d(range(V.shape[0]), od)
 
     # Find J
-    D = _demands(V, p)
+    D = _get_demands(V, p)
     J = [i for i in range(V.shape[0]) if np.isin(D[D[:, 0] == i, 1], od).all()]
 
     # Inner part of the problem
@@ -66,17 +76,18 @@ def _find_increment(V, p):
     return inner[J].min()
 
 
-def _find_overdemanded(V: np.ndarray, p: np.ndarray):
+def _get_overdemanded(V: np.ndarray, p: np.ndarray):
     # Get demands as numpy array
-    D = _demands(V, p)
-    carryon = True
+    D = _get_demands(V, p)
+    carry_on = True
 
-    while carryon:
+    # Remove underdemanded rooms iteratively
+    while carry_on:
         mask = _is_underdemanded(D)
         if mask is not None:
             D = D[~mask, :]
         else:
-            carryon = False
+            carry_on = False
 
     return np.unique(D[:, 1])
 
@@ -97,7 +108,7 @@ def _is_underdemanded(D: np.ndarray) -> np.ndarray | None:
     return np.isin(D[:, 0], agents_with_underdemanded)
 
 
-def _demands(V: np.ndarray, p: np.ndarray) -> np.ndarray:
+def _get_demands(V: np.ndarray, p: np.ndarray) -> np.ndarray:
     # Find utilities
     U = V - p
     max_u = np.max(U, axis=1)
