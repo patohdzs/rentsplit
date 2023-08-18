@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def compute_auction_prices(V: np.ndarray, R: float, tol: int = 10**5) -> np.ndarray:
+def compute_auction_prices(
+    V: np.ndarray, R: float, max_iter: int = 10**4
+) -> np.ndarray:
     """Computes envy-free prices using a simultanous
     ascending-descending auctions mechanism,
     following  Abdulkadiroğlu et al. (2004).
@@ -9,29 +11,40 @@ def compute_auction_prices(V: np.ndarray, R: float, tol: int = 10**5) -> np.ndar
     Args:
         V (np.ndarray): Matrix of room valuations.
         R (int): Total rent.
-        tol (int, optional): Maximum number of iterations. Defaults to 10**5.
-
-    Raises:
-        Exception: Timeout exception after tol iterations.
+        max_iter (int, optional): Maximum number of iterations. Defaults to 10**4.
 
     Returns:
         np.ndarray: Vector of envy-free room prices.
     """
     # Input validation
-    if R <= 0:
-        raise ValueError("R should be a positive number.")
+    V = np.asarray_chkfinite(V)
 
-    if not (V.sum(axis=1) >= R).all():
-        raise ValueError("Rows in V should sum to >= R.")
+    if len(V.shape) != 2:
+        raise ValueError(
+            "Expected a two-dimensional array (matrix)"
+            + f", but the shape of V is {V.shape}"
+        )
 
     if not V.shape[0] == V.shape[1]:
-        raise ValueError("V should be a square matrix.")
+        raise ValueError(
+            "Expected a square array (matrix)"
+            + f", but the dimensions of V are {V.shape}"
+        )
+
+    if not (V.sum(axis=1) >= R).all():
+        raise ValueError(
+            "Expected a right-stochastic array (matrix)"
+            + f", but the row-wise sums of V are {V.sum(axis=1)}"
+        )
+
+    if R <= 0:
+        raise ValueError("Expected a positive scalar" + f", but R is {R}")
 
     # Initialize variables
     n = V.shape[0]
     p = (R / n) * np.ones(n)
     t = 0
-    while t < tol:
+    while t < max_iter:
         # Find over-demanded rooms
         od = _get_overdemanded(V, p)
         if (od.size == 0) or (od.size == n):
@@ -51,7 +64,7 @@ def compute_auction_prices(V: np.ndarray, R: float, tol: int = 10**5) -> np.ndar
 
         # Increase counter
         t += 1
-    raise Exception(f"TIMEOUT after {tol} iterations.")
+    raise RuntimeError("Maximum number of iterations reached.")
 
 
 def _get_increment(V, p):
