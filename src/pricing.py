@@ -19,6 +19,9 @@ def compute_auction_prices(
     # Input validation
     V = np.asarray_chkfinite(V)
 
+    if not isinstance(R, (int, float)):
+        raise TypeError(f"Expected numeric (float, int), but R is {type(R)}")
+
     if len(V.shape) != 2:
         raise ValueError(
             "Expected a two-dimensional array (matrix)"
@@ -38,7 +41,7 @@ def compute_auction_prices(
         )
 
     if R <= 0:
-        raise ValueError("Expected a positive scalar" + f", but R is {R}")
+        raise ValueError(f"Expected a positive scalar, but R is {R}")
 
     # Initialize variables
     n = V.shape[0]
