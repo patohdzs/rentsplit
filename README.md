@@ -1,5 +1,5 @@
 # Rentsplit
-Split the rent with your mates!
+An implementation of Abdulkadiroğlu et al. (2004) for rent division.
 
 
 ## Installation
