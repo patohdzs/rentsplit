@@ -1,5 +1,5 @@
 # Rentsplit
-An implementation of Abdulkadiroğlu et al. (2004) for rent division.
+A implementation of Abdulkadiroğlu et al. (2004) for rent division.
 
 
 ## Installation
