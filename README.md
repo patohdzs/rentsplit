@@ -1,5 +1,5 @@
 # Rentsplit
-A implementation of Abdulkadiroğlu et al. (2004) for rent division.
+A Python implementation of the rent division algorithm in Abdulkadiroğlu et al. (2004)
 
 
 ## Installation
